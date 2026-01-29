@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinder</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #589384;
+      color: #1c3932;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    #board-input {
+      padding: 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    #board-url {
+      width: 80%;
+      max-width: 320px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #091613;
+      background: #1c3932;
+      color: #5a798c;
+      font-size: 16px;
+    }
+    #load-board {
+      margin-top: 12px;
+      padding: 12px 24px;
+      background: #9673be;
+      border: none;
+      border-radius: 12px;
+      color: #6872b6;;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #stack {
+      position: relative;
+      width: 320px;
+      height: 480px;
+      margin: 20px 0;
+    }
+    .card {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      transition: transform 0.3s ease, opacity 0.4s ease;
+      user-select: none;
+      cursor: grab;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .card.like {
+      transform: translateX(200%) rotate(25deg) !important;
+      opacity: 0;
+    }
+    .card.dislike {
+      transform: translateX(-200%) rotate(-25deg) !important;
+      opacity: 0;
+    }
+    #comment-section {
+      width: 320px;
+      background: #1a1a1a;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px 0;
+      max-height: 35vh;
+      overflow-y: auto;
+      border: 1px solid #333;
+    }
+    #comments-list {
+      margin-bottom: 16px;
+    }
+    #comments-list p {
+      margin: 8px 0;
+      padding: 8px 12px;
+      background: #2a2a2a;
+      border-radius: 8px;
+    }
+    #comment-form {
+      display: flex;
+      gap: 8px;
+    }
+    #comment-input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #333;
+      color: white;
+      font-size: 15px;
+    }
+    #comment-form button {
+      padding: 12px 20px;
+      background: #007bff;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+    #export-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 15px;
+    }
+    h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+    p.loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+    }
+    @media (max-width: 500px) {
+      #stack { width: 90vw; height: 60vh; }
+      #comment-section, #board-url { width: 90vw; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="board-input">
+    <input id="board-url" type="text" placeholder="Paste Pinterest board URL (e.g. https://www.pinterest.com/...)" />
+    <button id="load-board">Load Board</button>
+  </div>
+
+  <div id="stack"></div>
+
+  <div id="comment-section">
+    <h3>Comments & Tags for this photo</h3>
+    <div id="comments-list"></div>
+    <form id="comment-form">
+      <input id="comment-input" type="text" placeholder="Add comment or #tag..." />
+      <button type="submit">Post</button>
+    </form>
+  </div>
+
+  <button id="export-btn">Export to CSV</button>
+
+  <script>
+    let photos = [];           // {id, url, title, source, tag, comments: []}
+    let currentIndex = 0;
+    const API_KEY = 'LEKTZUi74XWUUPeZN7axp1fCkwT2'; // ← your ScrapeCreators key
+
+    const stack = document.getElementById('stack');
+
+    async function loadPinsFromBoard(boardUrl) {
+      try {
+        const apiUrl = `https://api.scrapecreators.com/v1/pinterest/board?url=${encodeURIComponent(boardUrl)}`;
+        console.log('Fetching:', apiUrl);
+
+        const response = await fetch(apiUrl, {
+          headers: { 'x-api-key': API_KEY }
+        });
+
+        console.log('Status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'No details');
+          throw new Error(`API error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+
+        console.log('Pins received:', data.pins?.length || 0);
+
+        return (data.pins || []).map(pin => {
+          const img = pin.images || {};
+          const imageUrl = 
+            img.orig?.url ||
+            img['736x']?.url ||
+            img['474x']?.url ||
+            img['236x']?.url ||
+            img['170x']?.url ||
+            '';
+
+          return {
+            id: pin.id || pin.node_id || Date.now().toString() + Math.random(),
+            url: imageUrl,
+            title: pin.grid_title || pin.description || pin.title || 'Pinterest Pin',
+            source: pin.link || pin.utm_link || pin.pin_url || '',
+            tag: null,
+            comments: []
+          };
+        }).filter(p => p.url && p.url.startsWith('https://i.pinimg.com/'));
+      } catch (error) {
+        console.error('Load failed:', error);
+        alert('Could not load board.\nCheck console (F12) for details.\nLikely: invalid URL, private board, or API issue.');
+        return [];
+      }
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('pinterestSwipePhotos', JSON.stringify(photos));
+      localStorage.setItem('pinterestSwipeIndex', currentIndex);
+    }
+
+    function loadFromLocalStorage() {
+      const savedPhotos = localStorage.getItem('pinterestSwipePhotos');
+      const savedIndex = localStorage.getItem('pinterestSwipeIndex');
+      if (savedPhotos) {
+        photos = JSON.parse(savedPhotos);
+        currentIndex = savedIndex ? parseInt(savedIndex, 10) : 0;
+        if (currentIndex >= photos.length) currentIndex = 0;
+        loadCards();
+      }
+    }
+
+    function loadCards() {
+      stack.innerHTML = '';
+
+      if (currentIndex >= photos.length) {
+        stack.innerHTML = '<p class="loading">All photos swiped!<br>Export or load a new board.</p>';
+        document.getElementById('comments-list').innerHTML = '';
+        return;
+      }
+
+      for (let i = currentIndex; i < Math.min(currentIndex + 3, photos.length); i++) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<img src="${photos[i].url}" alt="${photos[i].title || 'Pinterest pin'}">`;
+        card.dataset.index = i;
+
+        const offset = i - currentIndex;
+        card.style.transform = `translate(${offset * 10}px, ${offset * 12}px) rotate(${offset * 4}deg)`;
+        card.style.zIndex = photos.length - i;
+
+        stack.appendChild(card);
+      }
+
+      addSwipeListeners();
+      if (photos[currentIndex]) renderComments(photos[currentIndex]);
+    }
+
+    function addSwipeListeners() {
+      const topCard = stack.querySelector('.card');
+      if (!topCard) return;
+
+      let startX = 0, currentX = 0, isDragging = false;
+
+      const onStart = e => {
+        isDragging = true;
+        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        topCard.style.transition = 'none';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('touchend', onEnd);
+      };
+
+      const onMove = e => {
+        if (!isDragging) return;
+        e.preventDefault();
+        currentX = (e.type.includes('touch') ? e.touches[0].clientX : e.clientX) - startX;
+        topCard.style.transform = `translateX(${currentX}px) rotate(${currentX / 15}deg)`;
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        topCard.style.transition = 'transform 0.3s ease, opacity 0.4s ease';
+
+        if (Math.abs(currentX) > 120) {
+          const direction = currentX > 0 ? 'like' : 'dislike';
+          topCard.classList.add(direction);
+          photos[currentIndex].tag = direction;
+          currentIndex++;
+          setTimeout(loadCards, 400);
+          saveToLocalStorage();
+        } else {
+          topCard.style.transform = '';
+        }
+
+        startX = currentX = 0;
+
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      };
+
+      topCard.addEventListener('mousedown', onStart);
+      topCard.addEventListener('touchstart', onStart, { passive: false });
+    }
+
+    function renderComments(photo) {
+      const list = document.getElementById('comments-list');
+      list.innerHTML = photo.comments.length > 0
+        ? photo.comments.map(c => `<p>${c}</p>`).join('')
+        : '<p style="color:#888; text-align:center;">No comments yet</p>';
+    }
+
+    document.getElementById('comment-form').addEventListener('submit', e => {
+      e.preventDefault();
+      const input = document.getElementById('comment-input');
+      const text = input.value.trim();
+      if (text && photos[currentIndex]) {
+        photos[currentIndex].comments.push(text);
+        renderComments(photos[currentIndex]);
+        saveToLocalStorage();
+        input.value = '';
+      }
+    });
+
+    document.getElementById('export-btn').addEventListener('click', () => {
+      if (photos.length === 0) return alert('No photos to export!');
+      const csvRows = [['ID', 'Image URL', 'Title', 'Source URL', 'Tag', 'Comments']];
+      photos.forEach(p => {
+        csvRows.push([
+          p.id,
+          p.url,
+          `"${(p.title || '').replace(/"/g, '""')}"`,
+          p.source,
+          p.tag || 'none',
+          `"${p.comments.join('; ').replace(/"/g, '""')}"`
+        ]);
+      });
+      const csv = csvRows.map(row => row.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'pinterest-swipe-results.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('load-board').addEventListener('click', async () => {
+      const url = document.getElementById('board-url').value.trim();
+      if (!url || !url.includes('pinterest.com')) {
+        alert('Please enter a valid Pinterest board URL');
+        return;
+      }
+
+      stack.innerHTML = '<p class="loading">Loading pins...</p>';
+
+      const newPhotos = await loadPinsFromBoard(url);
+      if (newPhotos.length === 0) {
+        stack.innerHTML = '<p class="loading">No valid images found (check console F12).</p>';
+        return;
+      }
+
+      photos = newPhotos;
+      currentIndex = 0;
+      loadCards();
+      saveToLocalStorage();
+    });
+
+    // Load saved data on start
+    loadFromLocalStorage();
+  </script>
+</body>
+</html>
