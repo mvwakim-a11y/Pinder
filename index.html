@@ -37,7 +37,7 @@
       background: #9673be;
       border: none;
       border-radius: 12px;
-      color: #6872b6;;
+      color: #6872b6;
       font-size: 16px;
       cursor: pointer;
     }
@@ -71,6 +71,40 @@
       transform: translateX(-200%) rotate(-25deg) !important;
       opacity: 0;
     }
+
+    /* Reaction bar styles */
+    .reaction-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .reaction-bar .reactions {
+      display: flex;
+      gap: 8px;
+      background: rgba(0,0,0,0.4);
+      padding: 6px 12px;
+      border-radius: 999px;
+      pointer-events: auto;
+    }
+    .reaction-bar .react {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .reaction-bar .react:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.08);
+    }
+
     #comment-section {
       width: 320px;
       background: #1a1a1a;
@@ -161,32 +195,44 @@
   <button id="export-btn">Export to CSV</button>
 
   <script>
-    let photos = [];           // {id, url, title, source, tag, comments: []}
+    let photos = [];           // {id, url, title, source, tag, comments: [], reactions: {like,love,wow}}
     let currentIndex = 0;
     const API_KEY = 'LEKTZUi74XWUUPeZN7axp1fCkwT2'; // ← your ScrapeCreators key
 
     const stack = document.getElementById('stack');
+    const boardUrlInput = document.getElementById('board-url');
+    const loadBoardBtn = document.getElementById('load-board');
+
+    // ── Helpers ────────────────────────────────────────────────
+
+    function createCard(photo, idx) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.index = idx;
+      card.innerHTML = `
+        <img src="${photo.url}" alt="${photo.title || 'Pinterest pin'}">
+        <div class="reaction-bar" aria-label="Reactions">
+          <div class="reactions">
+            <button class="react" data-p="like">👍 ${photo.reactions?.like || 0}</button>
+            <button class="react" data-p="love">❤️ ${photo.reactions?.love || 0}</button>
+            <button class="react" data-p="wow">😮 ${photo.reactions?.wow || 0}</button>
+          </div>
+        </div>
+      `;
+      return card;
+    }
 
     async function loadPinsFromBoard(boardUrl) {
       try {
         const apiUrl = `https://api.scrapecreators.com/v1/pinterest/board?url=${encodeURIComponent(boardUrl)}`;
-        console.log('Fetching:', apiUrl);
-
         const response = await fetch(apiUrl, {
           headers: { 'x-api-key': API_KEY }
         });
-
-        console.log('Status:', response.status);
-
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'No details');
           throw new Error(`API error: ${response.status} - ${errorText}`);
         }
-
         const data = await response.json();
-
-        console.log('Pins received:', data.pins?.length || 0);
-
         return (data.pins || []).map(pin => {
           const img = pin.images || {};
           const imageUrl = 
@@ -194,21 +240,20 @@
             img['736x']?.url ||
             img['474x']?.url ||
             img['236x']?.url ||
-            img['170x']?.url ||
-            '';
-
+            img['170x']?.url || '';
           return {
             id: pin.id || pin.node_id || Date.now().toString() + Math.random(),
             url: imageUrl,
             title: pin.grid_title || pin.description || pin.title || 'Pinterest Pin',
             source: pin.link || pin.utm_link || pin.pin_url || '',
             tag: null,
-            comments: []
+            comments: [],
+            reactions: { like: 0, love: 0, wow: 0 }
           };
         }).filter(p => p.url && p.url.startsWith('https://i.pinimg.com/'));
       } catch (error) {
         console.error('Load failed:', error);
-        alert('Could not load board.\nCheck console (F12) for details.\nLikely: invalid URL, private board, or API issue.');
+        alert('Could not load board. Check console (F12).\nLikely: invalid URL, private board, or API issue.');
         return [];
       }
     }
@@ -225,13 +270,19 @@
         photos = JSON.parse(savedPhotos);
         currentIndex = savedIndex ? parseInt(savedIndex, 10) : 0;
         if (currentIndex >= photos.length) currentIndex = 0;
-        loadCards();
+        renderPhotoCardList();
       }
     }
 
-    function loadCards() {
-      stack.innerHTML = '';
+    function renderComments(photo) {
+      const list = document.getElementById('comments-list');
+      list.innerHTML = photo.comments.length > 0
+        ? photo.comments.map(c => `<p>${c}</p>`).join('')
+        : '<p style="color:#888; text-align:center;">No comments yet</p>';
+    }
 
+    function renderPhotoCardList() {
+      stack.innerHTML = '';
       if (currentIndex >= photos.length) {
         stack.innerHTML = '<p class="loading">All photos swiped!<br>Export or load a new board.</p>';
         document.getElementById('comments-list').innerHTML = '';
@@ -239,15 +290,11 @@
       }
 
       for (let i = currentIndex; i < Math.min(currentIndex + 3, photos.length); i++) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<img src="${photos[i].url}" alt="${photos[i].title || 'Pinterest pin'}">`;
-        card.dataset.index = i;
-
+        const photo = photos[i];
+        const card = createCard(photo, i);
         const offset = i - currentIndex;
         card.style.transform = `translate(${offset * 10}px, ${offset * 12}px) rotate(${offset * 4}deg)`;
         card.style.zIndex = photos.length - i;
-
         stack.appendChild(card);
       }
 
@@ -288,14 +335,13 @@
           topCard.classList.add(direction);
           photos[currentIndex].tag = direction;
           currentIndex++;
-          setTimeout(loadCards, 400);
+          setTimeout(renderPhotoCardList, 400);
           saveToLocalStorage();
         } else {
           topCard.style.transform = '';
         }
 
         startX = currentX = 0;
-
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onEnd);
         document.removeEventListener('touchmove', onMove);
@@ -306,13 +352,49 @@
       topCard.addEventListener('touchstart', onStart, { passive: false });
     }
 
-    function renderComments(photo) {
-      const list = document.getElementById('comments-list');
-      list.innerHTML = photo.comments.length > 0
-        ? photo.comments.map(c => `<p>${c}</p>`).join('')
-        : '<p style="color:#888; text-align:center;">No comments yet</p>';
+    // Keyboard support
+    document.addEventListener('keydown', e => {
+      if (!photos.length || currentIndex >= photos.length) return;
+      if (e.key === 'ArrowRight') swipeTopCard('like');
+      if (e.key === 'ArrowLeft') swipeTopCard('dislike');
+    });
+
+    function swipeTopCard(direction) {
+      const topCard = stack.querySelector('.card');
+      if (!topCard) return;
+
+      topCard.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+      if (direction === 'like') {
+        topCard.style.transform = `translateX(300px) rotate(25deg)`;
+        topCard.classList.add('like');
+        photos[currentIndex].tag = 'like';
+      } else {
+        topCard.style.transform = `translateX(-300px) rotate(-25deg)`;
+        topCard.classList.add('dislike');
+        photos[currentIndex].tag = 'dislike';
+      }
+      currentIndex++;
+      setTimeout(renderPhotoCardList, 260);
+      saveToLocalStorage();
     }
 
+    // Reaction clicks (event delegation)
+    stack.addEventListener('click', ev => {
+      const btn = ev.target.closest('.react');
+      if (!btn) return;
+      const pType = btn.getAttribute('data-p');
+      const card = btn.closest('.card');
+      const idx = parseInt(card?.dataset.index, 10);
+      if (Number.isNaN(idx) || !photos[idx]) return;
+
+      photos[idx].reactions = photos[idx].reactions || { like: 0, love: 0, wow: 0 };
+      photos[idx].reactions[pType] = (photos[idx].reactions[pType] || 0) + 1;
+
+      btn.textContent = `${pType === 'like' ? '👍' : pType === 'love' ? '❤️' : '😮'} ${photos[idx].reactions[pType]}`;
+      saveToLocalStorage();
+    });
+
+    // Comments
     document.getElementById('comment-form').addEventListener('submit', e => {
       e.preventDefault();
       const input = document.getElementById('comment-input');
@@ -325,17 +407,22 @@
       }
     });
 
+    // Export
     document.getElementById('export-btn').addEventListener('click', () => {
       if (photos.length === 0) return alert('No photos to export!');
-      const csvRows = [['ID', 'Image URL', 'Title', 'Source URL', 'Tag', 'Comments']];
+      const csvRows = [['ID', 'Image URL', 'Title', 'Source URL', 'Tag', 'Comments', 'Reactions']];
       photos.forEach(p => {
+        const reactionsStr = p.reactions
+          ? Object.entries(p.reactions).map(([k, v]) => `${k}:${v}`).join('|')
+          : '';
         csvRows.push([
           p.id,
           p.url,
           `"${(p.title || '').replace(/"/g, '""')}"`,
           p.source,
           p.tag || 'none',
-          `"${p.comments.join('; ').replace(/"/g, '""')}"`
+          `"${(p.comments || []).join('; ').replace(/"/g, '""')}"`,
+          reactionsStr
         ]);
       });
       const csv = csvRows.map(row => row.join(',')).join('\n');
@@ -348,8 +435,9 @@
       URL.revokeObjectURL(url);
     });
 
-    document.getElementById('load-board').addEventListener('click', async () => {
-      const url = document.getElementById('board-url').value.trim();
+    // Load board
+    loadBoardBtn.addEventListener('click', async () => {
+      const url = boardUrlInput.value.trim();
       if (!url || !url.includes('pinterest.com')) {
         alert('Please enter a valid Pinterest board URL');
         return;
@@ -365,11 +453,11 @@
 
       photos = newPhotos;
       currentIndex = 0;
-      loadCards();
+      renderPhotoCardList();
       saveToLocalStorage();
     });
 
-    // Load saved data on start
+    // Start
     loadFromLocalStorage();
   </script>
 </body>
