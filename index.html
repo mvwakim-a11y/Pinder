@@ -104,6 +104,13 @@
       background: rgba(255,255,255,0.3);
       transform: scale(1.08);
     }
+    .reaction-bar .react.active {
+      background: rgba(255,255,255,0.3);
+    }
+    .reaction-bar .add-custom {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
 
     #comment-section {
       width: 320px;
@@ -114,6 +121,16 @@
       max-height: 35vh;
       overflow-y: auto;
       border: 1px solid #333;
+    }
+    #reactions-summary {
+      margin-bottom: 16px;
+      text-align: center;
+      color: #fff;
+      font-size: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     #comments-list {
       margin-bottom: 16px;
@@ -146,13 +163,13 @@
       cursor: pointer;
       font-size: 15px;
     }
-    #export-btn {
+    #undo-btn {
       position: fixed;
       top: 16px;
       right: 16px;
       padding: 10px 20px;
-      background: #28a745;
-      color: white;
+      background: #ffc107;
+      color: black;
       border: none;
       border-radius: 12px;
       cursor: pointer;
@@ -185,6 +202,7 @@
 
   <div id="comment-section">
     <h3>Comments & Tags for this photo</h3>
+    <div id="reactions-summary"></div>
     <div id="comments-list"></div>
     <form id="comment-form">
       <input id="comment-input" type="text" placeholder="Add comment or #tag..." />
@@ -192,12 +210,13 @@
     </form>
   </div>
 
-  <button id="export-btn">Export to CSV</button>
+  <button id="undo-btn">Undo</button>
 
   <script>
-    let photos = [];           // {id, url, title, source, tag, comments: [], reactions: {like,love,wow}}
+    let photos = [];           // {id, url, title, source, tag, comments: [], reactions: {'👍':0, ...}}
     let currentIndex = 0;
     const API_KEY = 'LEKTZUi74XWUUPeZN7axp1fCkwT2'; // ← your ScrapeCreators key
+    const fixedReactions = ['👍', '❤️', '😮'];
 
     const stack = document.getElementById('stack');
     const boardUrlInput = document.getElementById('board-url');
@@ -209,13 +228,24 @@
       const card = document.createElement('div');
       card.className = 'card';
       card.dataset.index = idx;
+
+      let reactionsHTML = fixedReactions.map(em => {
+        const value = photo.reactions[em] || 0;
+        return `<button class="react ${value === 1 ? 'active' : ''}" data-p="${em}">${em}</button>`;
+      }).join('');
+
+      Object.entries(photo.reactions).forEach(([em, value]) => {
+        if (value === 1 && !fixedReactions.includes(em)) {
+          reactionsHTML += `<button class="react active" data-p="${em}">${em}</button>`;
+        }
+      });
+
       card.innerHTML = `
         <img src="${photo.url}" alt="${photo.title || 'Pinterest pin'}">
         <div class="reaction-bar" aria-label="Reactions">
           <div class="reactions">
-            <button class="react" data-p="like">👍 ${photo.reactions?.like || 0}</button>
-            <button class="react" data-p="love">❤️ ${photo.reactions?.love || 0}</button>
-            <button class="react" data-p="wow">😮 ${photo.reactions?.wow || 0}</button>
+            ${reactionsHTML}
+            <button class="react add-custom">➕</button>
           </div>
         </div>
       `;
@@ -248,7 +278,7 @@
             source: pin.link || pin.utm_link || pin.pin_url || '',
             tag: null,
             comments: [],
-            reactions: { like: 0, love: 0, wow: 0 }
+            reactions: fixedReactions.reduce((acc, em) => { acc[em] = 0; return acc; }, {})
           };
         }).filter(p => p.url && p.url.startsWith('https://i.pinimg.com/'));
       } catch (error) {
@@ -281,11 +311,22 @@
         : '<p style="color:#888; text-align:center;">No comments yet</p>';
     }
 
+    function renderReactionsSummary(photo) {
+      const sumDiv = document.getElementById('reactions-summary');
+      const active = Object.entries(photo.reactions)
+        .filter(([_, v]) => v === 1)
+        .map(([k]) => k);
+      sumDiv.innerHTML = active.length > 0 
+        ? active.map(em => `<span>${em}</span>`).join('')
+        : '<span style="color:#888;">No reactions yet</span>';
+    }
+
     function renderPhotoCardList() {
       stack.innerHTML = '';
       if (currentIndex >= photos.length) {
         stack.innerHTML = '<p class="loading">All photos swiped!<br>Export or load a new board.</p>';
         document.getElementById('comments-list').innerHTML = '';
+        document.getElementById('reactions-summary').innerHTML = '';
         return;
       }
 
@@ -299,7 +340,10 @@
       }
 
       addSwipeListeners();
-      if (photos[currentIndex]) renderComments(photos[currentIndex]);
+      if (photos[currentIndex]) {
+        renderComments(photos[currentIndex]);
+        renderReactionsSummary(photos[currentIndex]);
+      }
     }
 
     function addSwipeListeners() {
@@ -382,16 +426,53 @@
     stack.addEventListener('click', ev => {
       const btn = ev.target.closest('.react');
       if (!btn) return;
-      const pType = btn.getAttribute('data-p');
       const card = btn.closest('.card');
       const idx = parseInt(card?.dataset.index, 10);
-      if (Number.isNaN(idx) || !photos[idx]) return;
+      if (Number.isNaN(idx) || !photos[idx] || idx !== currentIndex) return;
 
-      photos[idx].reactions = photos[idx].reactions || { like: 0, love: 0, wow: 0 };
-      photos[idx].reactions[pType] = (photos[idx].reactions[pType] || 0) + 1;
+      if (btn.classList.contains('add-custom')) {
+        const newEmoji = prompt('Enter an emoji:').trim();
+        if (!newEmoji) return;
 
-      btn.textContent = `${pType === 'like' ? '👍' : pType === 'love' ? '❤️' : '😮'} ${photos[idx].reactions[pType]}`;
+        const photo = photos[idx];
+        photo.reactions[newEmoji] = photo.reactions[newEmoji] === 1 ? 0 : 1;
+
+        let targetBtn = card.querySelector(`.react[data-p="${newEmoji.replace(/"/g, '\\"')}"]`);
+        if (!targetBtn) {
+          targetBtn = document.createElement('button');
+          targetBtn.className = 'react active';
+          targetBtn.dataset.p = newEmoji;
+          targetBtn.textContent = newEmoji;
+          const reactionsDiv = card.querySelector('.reactions');
+          reactionsDiv.insertBefore(targetBtn, reactionsDiv.lastChild);
+        } else {
+          if (photo.reactions[newEmoji] === 1) {
+            targetBtn.classList.add('active');
+          } else {
+            targetBtn.classList.remove('active');
+            if (!fixedReactions.includes(newEmoji)) {
+              targetBtn.remove();
+            }
+          }
+        }
+      } else {
+        const pType = btn.dataset.p;
+        const photo = photos[idx];
+        const newValue = photo.reactions[pType] === 1 ? 0 : 1;
+        photo.reactions[pType] = newValue;
+
+        if (newValue === 1) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+          if (!fixedReactions.includes(pType)) {
+            btn.remove();
+          }
+        }
+      }
+
       saveToLocalStorage();
+      renderReactionsSummary(photos[currentIndex]);
     });
 
     // Comments
@@ -407,32 +488,14 @@
       }
     });
 
-    // Export
-    document.getElementById('export-btn').addEventListener('click', () => {
-      if (photos.length === 0) return alert('No photos to export!');
-      const csvRows = [['ID', 'Image URL', 'Title', 'Source URL', 'Tag', 'Comments', 'Reactions']];
-      photos.forEach(p => {
-        const reactionsStr = p.reactions
-          ? Object.entries(p.reactions).map(([k, v]) => `${k}:${v}`).join('|')
-          : '';
-        csvRows.push([
-          p.id,
-          p.url,
-          `"${(p.title || '').replace(/"/g, '""')}"`,
-          p.source,
-          p.tag || 'none',
-          `"${(p.comments || []).join('; ').replace(/"/g, '""')}"`,
-          reactionsStr
-        ]);
-      });
-      const csv = csvRows.map(row => row.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'pinterest-swipe-results.csv';
-      link.click();
-      URL.revokeObjectURL(url);
+    // Undo
+    document.getElementById('undo-btn').addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        photos[currentIndex].tag = null;
+        renderPhotoCardList();
+        saveToLocalStorage();
+      }
     });
 
     // Load board
