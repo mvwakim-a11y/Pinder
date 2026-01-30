@@ -14,7 +14,7 @@
       background: #589384;
       color: #1c3932;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      touch-action: manipulation; /* helps mobile scrolling conflict */
+      touch-action: manipulation;
     }
     #board-input {
       padding: 20px;
@@ -47,7 +47,7 @@
       width: 320px;
       height: 480px;
       margin: 20px 0;
-      perspective: 1000px; /* subtle depth feel */
+      perspective: 1000px;
     }
     .card {
       position: absolute;
@@ -55,11 +55,13 @@
       border-radius: 16px;
       overflow: hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.45s ease;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                  opacity 0.45s ease,
+                  box-shadow 0.3s ease;
       user-select: none;
       cursor: grab;
-      will-change: transform, opacity;
-      transform: translateZ(0);          /* force GPU */
+      will-change: transform, opacity, box-shadow;
+      transform: translateZ(0);
       backface-visibility: hidden;
       opacity: 0;
       transform: translateZ(0) scale(0.92);
@@ -69,12 +71,17 @@
       transform: translateZ(0) scale(1);
     }
     .card.dragging {
-      transform: translateZ(0) scale(1.03);
+      transform: translateZ(0) scale(1.04);
       transition: none;
       box-shadow: 0 20px 50px rgba(0,0,0,0.7);
     }
+    /* Visual feedback when at least one reaction is active */
+    .card.reacted {
+      transform: translateZ(0) scale(1.035);
+      box-shadow: 0 16px 45px rgba(0,0,0,0.65);
+    }
     .card:not(:first-child) {
-      pointer-events: none;              /* huge smoothness win */
+      pointer-events: none;
     }
     .card img {
       width: 100%;
@@ -125,8 +132,8 @@
       transform: scale(1.14);
     }
     .reaction-bar .react.active {
-      background: rgba(255, 220, 100, 0.6);
-      transform: scale(1.08);
+      background: rgba(255, 220, 100, 0.65);
+      transform: scale(1.1);
     }
     .reaction-bar .add-custom {
       padding: 7px 13px;
@@ -244,7 +251,6 @@
     const boardUrlInput = document.getElementById('board-url');
     const loadBoardBtn = document.getElementById('load-board');
 
-    // Throttle helper
     function throttle(fn, delay) {
       let last = 0;
       return function(...args) {
@@ -262,12 +268,12 @@
       card.dataset.index = idx;
 
       let reactionsHTML = fixedReactions.map(em => {
-        const value = photo.reactions[em] || 0;
-        return `<button class="react ${value === 1 ? 'active' : ''}" data-p="${em}">${em}</button>`;
+        const v = photo.reactions[em] || 0;
+        return `<button class="react ${v === 1 ? 'active' : ''}" data-p="${em}">${em}</button>`;
       }).join('');
 
-      Object.entries(photo.reactions).forEach(([em, value]) => {
-        if (value === 1 && !fixedReactions.includes(em)) {
+      Object.entries(photo.reactions).forEach(([em, v]) => {
+        if (v === 1 && !fixedReactions.includes(em)) {
           reactionsHTML += `<button class="react active" data-p="${em}">${em}</button>`;
         }
       });
@@ -281,6 +287,12 @@
           </div>
         </div>
       `;
+
+      // Initial reacted state
+      if (Object.values(photo.reactions || {}).some(v => v === 1)) {
+        card.classList.add('reacted');
+      }
+
       return card;
     }
 
@@ -348,6 +360,14 @@
       }
     }
 
+    function updateCardReactedState() {
+      const topCard = stack.querySelector('.card');
+      if (!topCard) return;
+      const photo = photos[currentIndex];
+      const hasReaction = photo && Object.values(photo.reactions || {}).some(v => v === 1);
+      topCard.classList.toggle('reacted', hasReaction);
+    }
+
     function renderPhotoCardList() {
       stack.innerHTML = '';
       if (currentIndex >= photos.length) {
@@ -365,7 +385,6 @@
         stack.appendChild(card);
       }
 
-      // Gentle entrance
       requestAnimationFrame(() => {
         stack.querySelectorAll('.card').forEach(c => c.classList.add('visible'));
       });
@@ -374,6 +393,7 @@
       if (photos[currentIndex]) {
         renderComments(photos[currentIndex]);
         renderReactionsSummary(photos[currentIndex]);
+        updateCardReactedState();
       }
 
       preloadNextImages();
@@ -425,6 +445,8 @@
           saveToLocalStorage();
         } else {
           topCard.style.transform = `translateX(0) rotate(0deg) translateZ(0) scale(1)`;
+          // Re-apply reacted state after snap-back
+          setTimeout(updateCardReactedState, 50);
         }
 
         startX = currentX = 0;
@@ -470,18 +492,36 @@
       if (btn.classList.contains('add-custom')) {
         const emoji = prompt('Enter emoji:')?.trim();
         if (!emoji) return;
-        photo.reactions[emoji] = photo.reactions[emoji] === 1 ? 0 : 1;
-        renderPhotoCardList(); // full refresh for simplicity
+        const wasActive = photo.reactions[emoji] === 1;
+        photo.reactions[emoji] = wasActive ? 0 : 1;
+
+        if (!wasActive) {
+          // add button if new
+          const newBtn = document.createElement('button');
+          newBtn.className = 'react active';
+          newBtn.dataset.p = emoji;
+          newBtn.textContent = emoji;
+          card.querySelector('.reactions').insertBefore(newBtn, card.querySelector('.add-custom'));
+        } else {
+          // remove if custom & now off
+          if (!fixedReactions.includes(emoji)) btn.remove();
+          else btn.classList.remove('active');
+        }
       } else {
         const type = btn.dataset.p;
-        photo.reactions[type] = photo.reactions[type] === 1 ? 0 : 1;
-        renderReactionsSummary(photo);
-        btn.classList.toggle('active', photo.reactions[type] === 1);
-        if (photo.reactions[type] === 0 && !fixedReactions.includes(type)) {
-          btn.remove();
+        const wasActive = photo.reactions[type] === 1;
+        photo.reactions[type] = wasActive ? 0 : 1;
+
+        if (wasActive) {
+          btn.classList.remove('active');
+          if (!fixedReactions.includes(type)) btn.remove();
+        } else {
+          btn.classList.add('active');
         }
       }
 
+      renderReactionsSummary(photo);
+      updateCardReactedState();           // ← live size revert when last reaction removed
       saveToLocalStorage();
     });
 
