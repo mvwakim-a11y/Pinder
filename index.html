@@ -16,204 +16,91 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       touch-action: manipulation;
     }
-    #board-input {
-      padding: 20px;
-      text-align: center;
-      width: 100%;
-      max-width: 400px;
-    }
+    #board-input { padding: 20px; text-align: center; width: 100%; max-width: 400px; }
     #board-url {
-      width: 80%;
-      max-width: 320px;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #091613;
-      background: #1c3932;
-      color: #5a798c;
-      font-size: 16px;
+      width: 80%; max-width: 320px; padding: 12px; border-radius: 12px;
+      border: 1px solid #091613; background: #1c3932; color: #5a798c; font-size: 16px;
     }
     #load-board {
-      margin-top: 12px;
-      padding: 12px 24px;
-      background: #9673be;
-      border: none;
-      border-radius: 12px;
-      color: #6872b6;
-      font-size: 16px;
-      cursor: pointer;
+      margin-top: 12px; padding: 12px 24px; background: #9673be; border: none;
+      border-radius: 12px; color: #6872b6; font-size: 16px; cursor: pointer;
     }
     #stack {
-      position: relative;
-      width: 320px;
-      height: 480px;
-      margin: 20px 0;
-      perspective: 1000px;
+      position: relative; width: 320px; height: 480px; margin: 20px 0; perspective: 1000px;
     }
     .card {
-      position: absolute;
-      inset: 0;
-      border-radius: 16px;
-      overflow: hidden;
+      position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), 
-                  opacity 0.45s ease,
-                  box-shadow 0.3s ease;
-      user-select: none;
-      cursor: grab;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  opacity 0.45s ease, box-shadow 0.35s ease;
+      user-select: none; cursor: grab;
       will-change: transform, opacity, box-shadow;
-      transform: translateZ(0);
-      backface-visibility: hidden;
-      opacity: 0;
-      transform: translateZ(0) scale(0.92);
+      transform: translateZ(0); backface-visibility: hidden;
+      opacity: 0; transform: translateZ(0) scale(0.92);
     }
-    .card.visible {
-      opacity: 1;
-      transform: translateZ(0) scale(1);
-    }
+    .card.visible { opacity: 1; transform: translateZ(0) scale(1); }
     .card.dragging {
-      transform: translateZ(0) scale(1.04);
-      transition: none;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+      transform: translateZ(0) scale(1.05); transition: none;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.75);
     }
-    /* Visual feedback when at least one reaction is active */
     .card.reacted {
-      transform: translateZ(0) scale(1.035);
-      box-shadow: 0 16px 45px rgba(0,0,0,0.65);
+      transform: translateZ(0) scale(1.04);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.7);
     }
-    .card:not(:first-child) {
-      pointer-events: none;
-    }
-    .card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      pointer-events: none;
-    }
-    .card.like {
-      transform: translateX(220%) rotate(28deg) translateZ(0) !important;
-      opacity: 0;
-    }
-    .card.dislike {
-      transform: translateX(-220%) rotate(-28deg) translateZ(0) !important;
-      opacity: 0;
-    }
+    .card:not(:first-child) { pointer-events: none; }
+    .card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .card.like { transform: translateX(220%) rotate(28deg) translateZ(0) !important; opacity: 0; }
+    .card.dislike { transform: translateX(-220%) rotate(-28deg) translateZ(0) !important; opacity: 0; }
 
     .reaction-bar {
-      position: absolute;
-      bottom: 12px;
-      left: 12px;
-      right: 12px;
-      display: flex;
-      justify-content: center;
-      pointer-events: none;
+      position: absolute; bottom: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: center; pointer-events: none;
     }
     .reaction-bar .reactions {
-      display: flex;
-      gap: 8px;
-      background: rgba(0,0,0,0.45);
-      padding: 8px 14px;
-      border-radius: 999px;
-      pointer-events: auto;
+      display: flex; gap: 8px; background: rgba(0,0,0,0.45); padding: 8px 14px;
+      border-radius: 999px; pointer-events: auto;
     }
     .reaction-bar .react {
-      background: rgba(255,255,255,0.18);
-      border: none;
-      color: white;
-      padding: 7px 13px;
-      border-radius: 999px;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      touch-action: manipulation;
+      background: rgba(255,255,255,0.18); border: none; color: white;
+      padding: 7px 13px; border-radius: 999px; font-size: 15px; cursor: pointer;
+      transition: all 0.18s ease; touch-action: manipulation;
     }
-    .reaction-bar .react:hover,
-    .reaction-bar .react:active {
-      background: rgba(255,255,255,0.35);
-      transform: scale(1.14);
+    .reaction-bar .react:hover, .reaction-bar .react:active {
+      background: rgba(255,255,255,0.35); transform: scale(1.14);
     }
     .reaction-bar .react.active {
-      background: rgba(255, 220, 100, 0.65);
-      transform: scale(1.1);
+      background: rgba(255, 220, 100, 0.7); transform: scale(1.12);
     }
-    .reaction-bar .add-custom {
-      padding: 7px 13px;
-      font-size: 15px;
-    }
+    .reaction-bar .add-custom { padding: 7px 13px; font-size: 15px; }
 
     #comment-section {
-      width: 320px;
-      background: #1a1a1a;
-      padding: 16px;
-      border-radius: 12px;
-      margin: 16px 0;
-      max-height: 35vh;
-      overflow-y: auto;
-      border: 1px solid #333;
+      width: 320px; background: #1a1a1a; padding: 16px; border-radius: 12px;
+      margin: 16px 0; max-height: 35vh; overflow-y: auto; border: 1px solid #333;
     }
     #reactions-summary {
-      margin-bottom: 16px;
-      text-align: center;
-      color: #fff;
-      font-size: 22px;
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      margin-bottom: 16px; text-align: center; color: #fff; font-size: 22px;
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
     }
-    #comments-list {
-      margin-bottom: 16px;
-    }
+    #comments-list { margin-bottom: 16px; }
     #comments-list p {
-      margin: 8px 0;
-      padding: 8px 12px;
-      background: #2a2a2a;
-      border-radius: 8px;
+      margin: 8px 0; padding: 8px 12px; background: #2a2a2a; border-radius: 8px;
     }
-    #comment-form {
-      display: flex;
-      gap: 8px;
-    }
+    #comment-form { display: flex; gap: 8px; }
     #comment-input {
-      flex: 1;
-      padding: 12px;
-      border-radius: 12px;
-      border: none;
-      background: #333;
-      color: white;
-      font-size: 15px;
+      flex: 1; padding: 12px; border-radius: 12px; border: none;
+      background: #333; color: white; font-size: 15px;
     }
     #comment-form button {
-      padding: 12px 20px;
-      background: #007bff;
-      border: none;
-      border-radius: 12px;
-      color: white;
-      cursor: pointer;
-      font-size: 15px;
+      padding: 12px 20px; background: #007bff; border: none;
+      border-radius: 12px; color: white; cursor: pointer; font-size: 15px;
     }
     #undo-btn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      padding: 10px 20px;
-      background: #ffc107;
-      color: black;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      z-index: 100;
-      font-size: 15px;
+      position: fixed; top: 16px; right: 16px; padding: 10px 20px;
+      background: #ffc107; color: black; border: none; border-radius: 12px;
+      cursor: pointer; z-index: 100; font-size: 15px;
     }
-    h3 {
-      margin-top: 0;
-      font-size: 18px;
-    }
-    p.loading {
-      text-align: center;
-      padding: 40px;
-      font-size: 18px;
-      color: white;
-    }
+    h3 { margin-top: 0; font-size: 18px; }
+    p.loading { text-align: center; padding: 40px; font-size: 18px; color: white; }
     @media (max-width: 500px) {
       #stack { width: 90vw; height: 60vh; }
       #comment-section, #board-url { width: 90vw; }
@@ -253,11 +140,11 @@
 
     function throttle(fn, delay) {
       let last = 0;
-      return function(...args) {
+      return (...args) => {
         const now = Date.now();
         if (now - last >= delay) {
           last = now;
-          fn.apply(this, args);
+          fn(...args);
         }
       };
     }
@@ -267,217 +154,180 @@
       card.className = 'card';
       card.dataset.index = idx;
 
-      let reactionsHTML = fixedReactions.map(em => {
+      let html = fixedReactions.map(em => {
         const v = photo.reactions[em] || 0;
-        return `<button class="react ${v === 1 ? 'active' : ''}" data-p="${em}">${em}</button>`;
+        return `<button class="react ${v===1?'active':''}" data-p="${em}">${em}</button>`;
       }).join('');
 
-      Object.entries(photo.reactions).forEach(([em, v]) => {
-        if (v === 1 && !fixedReactions.includes(em)) {
-          reactionsHTML += `<button class="react active" data-p="${em}">${em}</button>`;
+      Object.entries(photo.reactions).forEach(([em,v]) => {
+        if (v===1 && !fixedReactions.includes(em)) {
+          html += `<button class="react active" data-p="${em}">${em}</button>`;
         }
       });
 
       card.innerHTML = `
-        <img src="${photo.url}" alt="${photo.title || 'Pinterest pin'}">
-        <div class="reaction-bar" aria-label="Reactions">
+        <img src="${photo.url}" alt="${photo.title||'Pin'}">
+        <div class="reaction-bar">
           <div class="reactions">
-            ${reactionsHTML}
-            <button class="react add-custom" title="Add custom emoji">➕</button>
+            ${html}
+            <button class="react add-custom" title="Add emoji">➕</button>
           </div>
         </div>
       `;
 
-      // Initial reacted state
-      if (Object.values(photo.reactions || {}).some(v => v === 1)) {
+      // Set initial reacted state
+      if (Object.values(photo.reactions).some(v => v===1)) {
         card.classList.add('reacted');
       }
 
       return card;
     }
 
-    async function loadPinsFromBoard(boardUrl) {
+    async function loadPinsFromBoard(url) {
       try {
-        const apiUrl = `https://api.scrapecreators.com/v1/pinterest/board?url=${encodeURIComponent(boardUrl)}`;
-        const response = await fetch(apiUrl, { headers: { 'x-api-key': API_KEY } });
-        if (!response.ok) throw new Error(`API ${response.status}`);
-        const data = await response.json();
-        return (data.pins || []).map(pin => {
-          const img = pin.images || {};
-          const url = img.orig?.url || img['736x']?.url || img['474x']?.url || img['236x']?.url || '';
-          return {
-            id: pin.id || Date.now() + Math.random(),
-            url,
-            title: pin.grid_title || pin.description || 'Pin',
-            source: pin.link || '',
-            tag: null,
-            comments: [],
-            reactions: fixedReactions.reduce((o, e) => { o[e] = 0; return o; }, {})
-          };
-        }).filter(p => p.url && p.url.startsWith('https://i.pinimg.com/'));
-      } catch (err) {
-        console.error(err);
-        alert('Failed to load board. Check console.');
+        const res = await fetch(`https://api.scrapecreators.com/v1/pinterest/board?url=${encodeURIComponent(url)}`, {
+          headers: { 'x-api-key': API_KEY }
+        });
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+        return (data.pins || []).map(p => ({
+          id: p.id || Date.now()+Math.random(),
+          url: p.images?.orig?.url || p.images?.['736x']?.url || '',
+          title: p.grid_title || p.description || 'Pin',
+          source: p.link || '',
+          tag: null,
+          comments: [],
+          reactions: fixedReactions.reduce((o,e)=>{o[e]=0;return o}, {})
+        })).filter(p => p.url.startsWith('https://i.pinimg.com/'));
+      } catch (e) {
+        console.error('Load failed:', e);
+        alert('Could not load board – check console (F12)');
         return [];
       }
     }
 
-    function saveToLocalStorage() {
+    function save() {
       localStorage.setItem('pinterestSwipePhotos', JSON.stringify(photos));
       localStorage.setItem('pinterestSwipeIndex', currentIndex);
     }
 
-    function loadFromLocalStorage() {
-      const saved = localStorage.getItem('pinterestSwipePhotos');
-      if (saved) {
-        photos = JSON.parse(saved);
+    function loadSaved() {
+      const data = localStorage.getItem('pinterestSwipePhotos');
+      if (data) {
+        photos = JSON.parse(data);
         currentIndex = Number(localStorage.getItem('pinterestSwipeIndex')) || 0;
         if (currentIndex >= photos.length) currentIndex = 0;
-        renderPhotoCardList();
+        render();
       }
     }
 
     function renderComments(photo) {
-      const list = document.getElementById('comments-list');
-      list.innerHTML = photo.comments?.length
+      document.getElementById('comments-list').innerHTML = photo.comments?.length
         ? photo.comments.map(c => `<p>${c}</p>`).join('')
         : '<p style="color:#888;text-align:center;">No comments yet</p>';
     }
 
-    function renderReactionsSummary(photo) {
+    function renderSummary(photo) {
       const div = document.getElementById('reactions-summary');
-      const active = Object.entries(photo.reactions || {})
-        .filter(([,v]) => v === 1)
-        .map(([k]) => k);
-      div.innerHTML = active.length
-        ? active.map(e => `<span>${e}</span>`).join('')
-        : '<span style="color:#888;">No reactions yet</span>';
+      const active = Object.entries(photo.reactions||{}).filter(([,v])=>v===1).map(([k])=>k);
+      div.innerHTML = active.length ? active.map(e=>`<span>${e}</span>`).join('') : '<span style="color:#888;">No reactions yet</span>';
     }
 
-    function preloadNextImages() {
-      for (let i = currentIndex + 1; i < Math.min(currentIndex + 6, photos.length); i++) {
-        new Image().src = photos[i].url;
-      }
-    }
-
-    function updateCardReactedState() {
-      const topCard = stack.querySelector('.card');
-      if (!topCard) return;
+    function updateReacted() {
+      const card = stack.querySelector('.card');
+      if (!card) return;
       const photo = photos[currentIndex];
-      const hasReaction = photo && Object.values(photo.reactions || {}).some(v => v === 1);
-      topCard.classList.toggle('reacted', hasReaction);
+      const hasAny = photo && Object.values(photo.reactions||{}).some(v=>v===1);
+      console.log('Updating reacted state:', hasAny ? 'ON' : 'OFF');
+      card.classList.toggle('reacted', hasAny);
     }
 
-    function renderPhotoCardList() {
+    function render() {
       stack.innerHTML = '';
       if (currentIndex >= photos.length) {
-        stack.innerHTML = '<p class="loading">All photos swiped!<br>Load another board or undo.</p>';
+        stack.innerHTML = '<p class="loading">All done!<br>Load new board or undo.</p>';
         document.getElementById('comments-list').innerHTML = '';
         document.getElementById('reactions-summary').innerHTML = '';
         return;
       }
 
       for (let i = currentIndex; i < Math.min(currentIndex + 3, photos.length); i++) {
-        const card = createCard(photos[i], i);
-        const offset = i - currentIndex;
-        card.style.transform = `translate(${offset*12}px, ${offset*14}px) rotate(${offset*5}deg) translateZ(0) scale(0.94)`;
-        card.style.zIndex = photos.length - i;
-        stack.appendChild(card);
+        const c = createCard(photos[i], i);
+        const off = i - currentIndex;
+        c.style.transform = `translate(${off*12}px, ${off*14}px) rotate(${off*5}deg) translateZ(0) scale(0.94)`;
+        c.style.zIndex = photos.length - i;
+        stack.appendChild(c);
       }
 
       requestAnimationFrame(() => {
-        stack.querySelectorAll('.card').forEach(c => c.classList.add('visible'));
+        document.querySelectorAll('.card').forEach(c => c.classList.add('visible'));
       });
 
       addSwipeListeners();
       if (photos[currentIndex]) {
         renderComments(photos[currentIndex]);
-        renderReactionsSummary(photos[currentIndex]);
-        updateCardReactedState();
+        renderSummary(photos[currentIndex]);
+        updateReacted();
       }
-
-      preloadNextImages();
     }
 
     function addSwipeListeners() {
-      const topCard = stack.querySelector('.card');
-      if (!topCard) return;
-
-      let startX = 0, currentX = 0, startTime = 0, isDragging = false;
-
-      const onStart = e => {
-        isDragging = true;
-        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        startTime = Date.now();
-        topCard.style.transition = 'none';
-        topCard.classList.add('dragging');
-        document.addEventListener('mousemove', onMoveThrottled);
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchmove', onMoveThrottled, { passive: false });
-        document.addEventListener('touchend', onEnd);
-      };
-
-      const onMove = e => {
-        if (!isDragging) return;
-        e.preventDefault();
-        currentX = (e.type.includes('touch') ? e.touches[0].clientX : e.clientX) - startX;
-        topCard.style.transform = `translateX(${currentX}px) rotate(${currentX/12}deg) translateZ(0)`;
-      };
-
-      const onMoveThrottled = throttle(onMove, 16);
-
-      const onEnd = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        topCard.classList.remove('dragging');
-        topCard.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.45s ease';
-
-        const deltaTime = Date.now() - startTime;
-        const velocity = Math.abs(currentX) / (deltaTime || 1);
-        const threshold = window.innerWidth < 500 ? 90 : 130;
-
-        if (Math.abs(currentX) > threshold || velocity > 1.3) {
-          const dir = currentX > 0 ? 'like' : 'dislike';
-          topCard.classList.add(dir);
-          photos[currentIndex].tag = dir;
-          currentIndex++;
-          setTimeout(renderPhotoCardList, 460);
-          saveToLocalStorage();
-        } else {
-          topCard.style.transform = `translateX(0) rotate(0deg) translateZ(0) scale(1)`;
-          // Re-apply reacted state after snap-back
-          setTimeout(updateCardReactedState, 50);
-        }
-
-        startX = currentX = 0;
-        document.removeEventListener('mousemove', onMoveThrottled);
-        document.removeEventListener('mouseup', onEnd);
-        document.removeEventListener('touchmove', onMoveThrottled);
-        document.removeEventListener('touchend', onEnd);
-      };
-
-      topCard.addEventListener('mousedown', onStart);
-      topCard.addEventListener('touchstart', onStart, { passive: false });
-    }
-
-    document.addEventListener('keydown', e => {
-      if (currentIndex >= photos.length) return;
-      if (e.key === 'ArrowRight') swipeTopCard('like');
-      if (e.key === 'ArrowLeft') swipeTopCard('dislike');
-    });
-
-    function swipeTopCard(dir) {
       const card = stack.querySelector('.card');
       if (!card) return;
-      card.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.4s ease';
-      card.style.transform = dir === 'like'
-        ? 'translateX(300px) rotate(30deg) translateZ(0)'
-        : 'translateX(-300px) rotate(-30deg) translateZ(0)';
-      card.classList.add(dir);
-      photos[currentIndex].tag = dir;
-      currentIndex++;
-      setTimeout(renderPhotoCardList, 420);
-      saveToLocalStorage();
+
+      let sx=0, cx=0, st=0, dragging=false;
+
+      const start = e => {
+        dragging = true;
+        sx = e.touches?.[0]?.clientX ?? e.clientX;
+        st = Date.now();
+        card.style.transition = 'none';
+        card.classList.add('dragging');
+        document.addEventListener('mousemove', moveT);
+        document.addEventListener('mouseup', end);
+        document.addEventListener('touchmove', moveT, {passive:false});
+        document.addEventListener('touchend', end);
+      };
+
+      const move = e => {
+        if (!dragging) return;
+        e.preventDefault();
+        cx = (e.touches?.[0]?.clientX ?? e.clientX) - sx;
+        card.style.transform = `translateX(${cx}px) rotate(${cx/12}deg) translateZ(0)`;
+      };
+
+      const moveT = throttle(move, 16);
+
+      const end = () => {
+        if (!dragging) return;
+        dragging = false;
+        card.classList.remove('dragging');
+        card.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.45s ease';
+
+        const vel = Math.abs(cx) / (Date.now() - st || 1);
+        const thresh = window.innerWidth < 500 ? 90 : 130;
+
+        if (Math.abs(cx) > thresh || vel > 1.3) {
+          const dir = cx > 0 ? 'like' : 'dislike';
+          card.classList.add(dir);
+          photos[currentIndex].tag = dir;
+          currentIndex++;
+          setTimeout(render, 460);
+          save();
+        } else {
+          card.style.transform = `translateX(0) rotate(0deg) translateZ(0) scale(1)`;
+          setTimeout(updateReacted, 60);
+        }
+
+        sx = cx = 0;
+        document.removeEventListener('mousemove', moveT);
+        document.removeEventListener('mouseup', end);
+        document.removeEventListener('touchmove', moveT);
+        document.removeEventListener('touchend', end);
+      };
+
+      card.addEventListener('mousedown', start);
+      card.addEventListener('touchstart', start, {passive:false});
     }
 
     stack.addEventListener('click', e => {
@@ -485,85 +335,64 @@
       if (!btn) return;
       const card = btn.closest('.card');
       const idx = Number(card?.dataset.index);
-      if (isNaN(idx) || idx !== currentIndex) return;
+      if (idx !== currentIndex) return;
 
       const photo = photos[idx];
 
       if (btn.classList.contains('add-custom')) {
-        const emoji = prompt('Enter emoji:')?.trim();
-        if (!emoji) return;
-        const wasActive = photo.reactions[emoji] === 1;
-        photo.reactions[emoji] = wasActive ? 0 : 1;
-
-        if (!wasActive) {
-          // add button if new
-          const newBtn = document.createElement('button');
-          newBtn.className = 'react active';
-          newBtn.dataset.p = emoji;
-          newBtn.textContent = emoji;
-          card.querySelector('.reactions').insertBefore(newBtn, card.querySelector('.add-custom'));
-        } else {
-          // remove if custom & now off
-          if (!fixedReactions.includes(emoji)) btn.remove();
-          else btn.classList.remove('active');
-        }
+        const em = prompt('Enter emoji:')?.trim();
+        if (!em) return;
+        const was = photo.reactions[em] === 1;
+        photo.reactions[em] = was ? 0 : 1;
+        render(); // refresh for new emoji button
       } else {
         const type = btn.dataset.p;
-        const wasActive = photo.reactions[type] === 1;
-        photo.reactions[type] = wasActive ? 0 : 1;
-
-        if (wasActive) {
-          btn.classList.remove('active');
-          if (!fixedReactions.includes(type)) btn.remove();
-        } else {
-          btn.classList.add('active');
-        }
+        const was = photo.reactions[type] === 1;
+        photo.reactions[type] = was ? 0 : 1;
+        btn.classList.toggle('active', !was);
+        if (was && !fixedReactions.includes(type)) btn.remove();
       }
 
-      renderReactionsSummary(photo);
-      updateCardReactedState();           // ← live size revert when last reaction removed
-      saveToLocalStorage();
+      renderSummary(photo);
+      updateReacted();
+      save();
     });
 
     document.getElementById('comment-form').addEventListener('submit', e => {
       e.preventDefault();
-      const input = document.getElementById('comment-input');
-      const text = input.value.trim();
-      if (text && photos[currentIndex]) {
-        photos[currentIndex].comments.push(text);
+      const inp = document.getElementById('comment-input');
+      const txt = inp.value.trim();
+      if (txt && photos[currentIndex]) {
+        photos[currentIndex].comments.push(txt);
         renderComments(photos[currentIndex]);
-        saveToLocalStorage();
-        input.value = '';
+        save();
+        inp.value = '';
       }
     });
 
     document.getElementById('undo-btn').addEventListener('click', () => {
-      if (currentIndex <= 0) return;
-      currentIndex--;
-      photos[currentIndex].tag = null;
-      renderPhotoCardList();
-      saveToLocalStorage();
+      if (currentIndex > 0) {
+        currentIndex--;
+        photos[currentIndex].tag = null;
+        render();
+        save();
+      }
     });
 
     loadBoardBtn.addEventListener('click', async () => {
       const url = boardUrlInput.value.trim();
-      if (!url.includes('pinterest.com')) {
-        alert('Please enter a valid Pinterest board URL');
-        return;
-      }
-      stack.innerHTML = '<p class="loading">Loading pins...</p>';
+      if (!url.includes('pinterest.com')) return alert('Invalid Pinterest URL');
+      stack.innerHTML = '<p class="loading">Loading...</p>';
       const pins = await loadPinsFromBoard(url);
-      if (!pins.length) {
-        stack.innerHTML = '<p class="loading">No valid images found.</p>';
-        return;
-      }
+      if (!pins.length) return stack.innerHTML = '<p class="loading">No images found.</p>';
       photos = pins;
       currentIndex = 0;
-      renderPhotoCardList();
-      saveToLocalStorage();
+      render();
+      save();
     });
 
-    loadFromLocalStorage();
+    loadSaved();
+    console.log('Pinder loaded – open F12 Console to see logs');
   </script>
 </body>
 </html>
