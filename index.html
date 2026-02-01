@@ -3,186 +3,628 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pinder</title>
+  <title>Pinder - Wedding Planning Together 💍</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: #589384;
-      color: #1c3932;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #2d3748;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       touch-action: manipulation;
     }
-    #board-input { padding: 20px; text-align: center; width: 100%; max-width: 400px; }
+
+    /* Auth Screen */
+    #auth-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+    }
+    #auth-screen h1 {
+      font-size: 48px;
+      color: white;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    #auth-screen p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 32px;
+    }
+    #google-signin-btn {
+      background: white;
+      color: #444;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #google-signin-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+
+    /* Main App */
+    #app-container {
+      display: none;
+      width: 100%;
+      max-width: 1200px;
+      padding: 20px;
+    }
+    #app-container.active { display: flex; flex-direction: column; }
+
+    /* Header */
+    #header {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #667eea;
+    }
+    #user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #667eea;
+    }
+    #signout-btn {
+      padding: 8px 16px;
+      background: #f56565;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    /* Board Input */
+    #board-input {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
     #board-url {
-      width: 80%; max-width: 320px; padding: 12px; border-radius: 12px;
-      border: 1px solid #091613; background: #1c3932; color: #5a798c; font-size: 16px;
+      width: 100%;
+      max-width: 500px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      font-size: 16px;
+      margin-bottom: 12px;
+    }
+    #board-url:focus {
+      outline: none;
+      border-color: #667eea;
     }
     #load-board {
-      margin-top: 12px; padding: 12px 24px; background: #9673be; border: none;
-      border-radius: 12px; color: #6872b6; font-size: 16px; cursor: pointer;
+      padding: 14px 32px;
+      background: #667eea;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #load-board:hover { background: #5568d3; }
+
+    /* Main Content */
+    #main-content {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* Stack */
+    #stack-container {
+      flex: 0 0 auto;
     }
     #stack {
-      position: relative; width: 320px; height: 480px; margin: 20px 0; perspective: 1000px;
+      position: relative;
+      width: 340px;
+      height: 500px;
+      perspective: 1000px;
+      margin-bottom: 20px;
     }
     .card {
-      position: absolute; inset: 0; border-radius: 16px; overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
       transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
                   opacity 0.45s ease, box-shadow 0.35s ease;
-      user-select: none; cursor: grab;
+      user-select: none;
+      cursor: grab;
       will-change: transform, opacity, box-shadow;
-      transform: translateZ(0); backface-visibility: hidden;
-      opacity: 0; transform: translateZ(0) scale(0.92);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      opacity: 0;
+      background: white;
     }
     .card.visible { opacity: 1; transform: translateZ(0) scale(1); }
     .card.dragging {
-      transform: translateZ(0) scale(1.05); transition: none;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.75);
+      transform: translateZ(0) scale(1.05);
+      transition: none;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+      cursor: grabbing;
     }
     .card.reacted {
-      transform: translateZ(0) scale(1.04);
-      box-shadow: 0 18px 50px rgba(0,0,0,0.7);
+      box-shadow: 0 12px 40px rgba(102, 126, 234, 0.4);
     }
     .card:not(:first-child) { pointer-events: none; }
-    .card img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-    .card.like { transform: translateX(220%) rotate(28deg) translateZ(0) !important; opacity: 0; }
-    .card.dislike { transform: translateX(-220%) rotate(-28deg) translateZ(0) !important; opacity: 0; }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .card.like {
+      transform: translateX(220%) rotate(28deg) translateZ(0) !important;
+      opacity: 0;
+    }
+    .card.dislike {
+      transform: translateX(-220%) rotate(-28deg) translateZ(0) !important;
+      opacity: 0;
+    }
 
+    /* Reaction Bar */
     .reaction-bar {
-      position: absolute; bottom: 12px; left: 12px; right: 12px;
-      display: flex; justify-content: center; pointer-events: none;
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
     }
     .reaction-bar .reactions {
-      display: flex; gap: 8px; background: rgba(0,0,0,0.45); padding: 8px 14px;
-      border-radius: 999px; pointer-events: auto;
+      display: flex;
+      gap: 8px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px 16px;
+      border-radius: 999px;
+      pointer-events: auto;
+      justify-content: center;
+      flex-wrap: wrap;
     }
     .reaction-bar .react {
-      background: rgba(255,255,255,0.18); border: none; color: white;
-      padding: 7px 13px; border-radius: 999px; font-size: 15px; cursor: pointer;
-      transition: all 0.18s ease; touch-action: manipulation;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
     }
-    .reaction-bar .react:hover, .reaction-bar .react:active {
-      background: rgba(255,255,255,0.35); transform: scale(1.14);
+    .reaction-bar .react:hover {
+      background: rgba(255,255,255,0.35);
+      transform: scale(1.15);
     }
     .reaction-bar .react.active {
-      background: rgba(255, 220, 100, 0.7); transform: scale(1.12);
+      background: rgba(102, 126, 234, 0.9);
+      transform: scale(1.1);
     }
-    .reaction-bar .add-custom { padding: 7px 13px; font-size: 15px; }
+    .reaction-bar .user-tags {
+      display: flex;
+      gap: 6px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 12px;
+      border-radius: 999px;
+      pointer-events: auto;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+    .user-tag {
+      background: rgba(255,255,255,0.25);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .user-tag img {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid white;
+    }
 
+    /* Sidebar */
+    #sidebar {
+      flex: 1;
+      min-width: 300px;
+      max-width: 500px;
+    }
+
+    /* Active Users */
+    #active-users {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #active-users h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      color: #667eea;
+    }
+    #users-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f7fafc;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+    }
+    .user-badge img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+    }
+    .user-badge.online::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #48bb78;
+      border-radius: 50%;
+      margin-left: 4px;
+    }
+
+    /* Comments Section */
     #comment-section {
-      width: 320px; background: #1a1a1a; padding: 16px; border-radius: 12px;
-      margin: 16px 0; max-height: 35vh; overflow-y: auto; border: 1px solid #333;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #comment-section h3 {
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      color: #667eea;
     }
     #reactions-summary {
-      margin-bottom: 16px; text-align: center; color: #fff; font-size: 22px;
-      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-height: 50px;
+      align-items: center;
     }
-    #comments-list { margin-bottom: 16px; }
-    #comments-list p {
-      margin: 8px 0; padding: 8px 12px; background: #2a2a2a; border-radius: 8px;
+    #comments-list {
+      margin-bottom: 16px;
+      max-height: 300px;
+      overflow-y: auto;
     }
-    #comment-form { display: flex; gap: 8px; }
+    .comment {
+      margin: 10px 0;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 12px;
+      border-left: 4px solid #667eea;
+    }
+    .comment-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #718096;
+    }
+    .comment-header img {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    .comment-text {
+      font-size: 15px;
+      color: #2d3748;
+    }
+    #comment-form {
+      display: flex;
+      gap: 8px;
+    }
     #comment-input {
-      flex: 1; padding: 12px; border-radius: 12px; border: none;
-      background: #333; color: white; font-size: 15px;
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid #e2e8f0;
+      font-size: 15px;
+    }
+    #comment-input:focus {
+      outline: none;
+      border-color: #667eea;
     }
     #comment-form button {
-      padding: 12px 20px; background: #007bff; border: none;
-      border-radius: 12px; color: white; cursor: pointer; font-size: 15px;
+      padding: 12px 24px;
+      background: #667eea;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
     }
+
+    /* Undo Button */
     #undo-btn {
-      position: fixed; top: 16px; right: 16px; padding: 10px 20px;
-      background: #ffc107; color: black; border: none; border-radius: 12px;
-      cursor: pointer; z-index: 100; font-size: 15px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 14px 24px;
+      background: #fbbf24;
+      color: #78350f;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+      transition: transform 0.2s;
     }
-    h3 { margin-top: 0; font-size: 18px; }
-    p.loading { text-align: center; padding: 40px; font-size: 18px; color: white; }
-    @media (max-width: 500px) {
-      #stack { width: 90vw; height: 60vh; }
-      #comment-section, #board-url { width: 90vw; }
+    #undo-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 18px;
+      color: #667eea;
+    }
+
+    @media (max-width: 768px) {
+      #stack { width: 90vw; max-width: 340px; height: 60vh; min-height: 400px; }
+      #main-content { flex-direction: column; }
+      #sidebar { max-width: 100%; }
     }
   </style>
 </head>
 <body>
 
-  <div id="board-input">
-    <input id="board-url" type="text" placeholder="Paste Pinterest board URL" />
-    <button id="load-board">Load Board</button>
+  <!-- Auth Screen -->
+  <div id="auth-screen">
+    <h1>💍 Pinder</h1>
+    <p>Plan your wedding together, swipe through ideas, and collaborate in real-time</p>
+    <button id="google-signin-btn">
+      <svg width="20" height="20" viewBox="0 0 20 20">
+        <path fill="#4285F4" d="M19.6 10.23c0-.82-.1-1.42-.25-2.05H10v3.72h5.5c-.15.96-.74 2.31-2.04 3.22v2.45h3.16c1.89-1.73 2.98-4.3 2.98-7.34z"/>
+        <path fill="#34A853" d="M13.46 15.13c-.83.59-1.96 1-3.46 1-2.64 0-4.88-1.74-5.68-4.15H1.07v2.52C2.72 17.75 6.09 20 10 20c2.7 0 4.96-.89 6.62-2.42l-3.16-2.45z"/>
+        <path fill="#FBBC05" d="M3.99 10c0-.69.12-1.35.32-1.97V5.51H1.07A9.973 9.973 0 000 10c0 1.61.39 3.14 1.07 4.49l3.24-2.52c-.2-.62-.32-1.28-.32-1.97z"/>
+        <path fill="#EA4335" d="M10 3.88c1.88 0 3.13.81 3.85 1.48l2.84-2.76C14.96.99 12.7 0 10 0 6.09 0 2.72 2.25 1.07 5.51l3.24 2.52C5.12 5.62 7.36 3.88 10 3.88z"/>
+      </svg>
+      Sign in with Google
+    </button>
   </div>
 
-  <div id="stack"></div>
+  <!-- Main App -->
+  <div id="app-container">
+    <!-- Header -->
+    <div id="header">
+      <h1>💍 Pinder</h1>
+      <div id="user-info">
+        <img id="user-avatar" src="" alt="User">
+        <span id="user-name"></span>
+        <button id="signout-btn">Sign Out</button>
+      </div>
+    </div>
 
-  <div id="comment-section">
-    <h3>Reactions & Comments</h3>
-    <div id="reactions-summary"></div>
-    <div id="comments-list"></div>
-    <form id="comment-form">
-      <input id="comment-input" type="text" placeholder="Add comment or #tag..." />
-      <button type="submit">Post</button>
-    </form>
+    <!-- Board Input -->
+    <div id="board-input">
+      <input id="board-url" type="text" placeholder="Paste Pinterest board URL (e.g., wedding dresses, decorations...)" />
+      <button id="load-board">Load Board</button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+      <!-- Stack -->
+      <div id="stack-container">
+        <div id="stack"></div>
+      </div>
+
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <!-- Active Users -->
+        <div id="active-users">
+          <h3>👥 Active Users</h3>
+          <div id="users-list"></div>
+        </div>
+
+        <!-- Comments -->
+        <div id="comment-section">
+          <h3>💬 Reactions & Comments</h3>
+          <div id="reactions-summary">
+            <span style="color:#cbd5e0;">No reactions yet</span>
+          </div>
+          <div id="comments-list">
+            <p style="color:#a0aec0;text-align:center;padding:20px;">No comments yet</p>
+          </div>
+          <form id="comment-form">
+            <input id="comment-input" type="text" placeholder="Add comment or #tag..." />
+            <button type="submit">Post</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <button id="undo-btn">↶ Undo</button>
   </div>
-
-  <button id="undo-btn">Undo</button>
 
   <script>
+    // Configuration
+    const API_KEY = 'LEKTZUi74XWUUPeZN7axp1fCkwT2';
+    const STORAGE_PREFIX = 'pinder_wedding_';
+    const fixedReactions = ['👍', '❤️', '😍', '💍', '✨'];
+
+    // State
     let photos = [];
     let currentIndex = 0;
-    const API_KEY = 'LEKTZUi74XWUUPeZN7axp1fCkwT2';
-    const fixedReactions = ['👍', '❤️', '😮'];
+    let currentUser = null;
+    let activeUsers = new Map();
 
-    const stack = document.getElementById('stack');
-    const boardUrlInput = document.getElementById('board-url');
-    const loadBoardBtn = document.getElementById('load-board');
-
-    function throttle(fn, delay) {
-      let last = 0;
-      return (...args) => {
-        const now = Date.now();
-        if (now - last >= delay) {
-          last = now;
-          fn(...args);
-        }
-      };
+    // Mock Google Auth (replace with real Google Sign-In)
+    function initGoogleAuth() {
+      document.getElementById('google-signin-btn').addEventListener('click', async () => {
+        // In production, use Google Identity Services
+        // For now, simulate authentication
+        const mockUser = {
+          id: 'user_' + Date.now(),
+          name: prompt('Enter your name:') || 'Anonymous',
+          email: 'user@example.com',
+          photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(prompt('Enter your name:') || 'User')}&background=667eea&color=fff`
+        };
+        
+        if (!mockUser.name || mockUser.name === 'Anonymous') return;
+        
+        currentUser = mockUser;
+        localStorage.setItem(STORAGE_PREFIX + 'user', JSON.stringify(mockUser));
+        showApp();
+      });
     }
 
+    function showApp() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-container').classList.add('active');
+      document.getElementById('user-avatar').src = currentUser.photoURL;
+      document.getElementById('user-name').textContent = currentUser.name;
+      loadSaved();
+      startPresenceTracking();
+    }
+
+    function signOut() {
+      localStorage.removeItem(STORAGE_PREFIX + 'user');
+      location.reload();
+    }
+
+    // Presence tracking (simulated - use Firebase/Supabase in production)
+    function startPresenceTracking() {
+      activeUsers.set(currentUser.id, {
+        ...currentUser,
+        lastSeen: Date.now(),
+        online: true
+      });
+      renderActiveUsers();
+      
+      // Simulate checking for other users
+      setInterval(() => {
+        renderActiveUsers();
+      }, 5000);
+    }
+
+    function renderActiveUsers() {
+      const list = document.getElementById('users-list');
+      const now = Date.now();
+      const users = Array.from(activeUsers.values())
+        .filter(u => now - u.lastSeen < 30000); // Online if seen in last 30s
+      
+      list.innerHTML = users.map(u => `
+        <div class="user-badge ${u.online ? 'online' : ''}">
+          <img src="${u.photoURL}" alt="${u.name}">
+          <span>${u.name}</span>
+        </div>
+      `).join('');
+    }
+
+    // Card creation
     function createCard(photo, idx) {
       const card = document.createElement('div');
       card.className = 'card';
       card.dataset.index = idx;
 
-      let html = fixedReactions.map(em => {
-        const v = photo.reactions[em] || 0;
-        return `<button class="react ${v===1?'active':''}" data-p="${em}">${em}</button>`;
+      let reactionHtml = fixedReactions.map(em => {
+        const userReactions = photo.reactions[em] || [];
+        const userReacted = userReactions.includes(currentUser.id);
+        return `<button class="react ${userReacted ? 'active' : ''}" data-p="${em}">${em}</button>`;
       }).join('');
 
-      Object.entries(photo.reactions).forEach(([em,v]) => {
-        if (v===1 && !fixedReactions.includes(em)) {
-          html += `<button class="react active" data-p="${em}">${em}</button>`;
-        }
-      });
+      // User tags (who liked/disliked)
+      let userTagsHtml = '';
+      if (photo.userTags && photo.userTags.length > 0) {
+        userTagsHtml = '<div class="user-tags">' + 
+          photo.userTags.map(tag => {
+            const user = activeUsers.get(tag.userId) || { name: 'User', photoURL: '' };
+            return `<div class="user-tag">
+              ${user.photoURL ? `<img src="${user.photoURL}" alt="${user.name}">` : ''}
+              <span>${tag.tag === 'like' ? '👍' : '👎'} ${user.name}</span>
+            </div>`;
+          }).join('') + 
+        '</div>';
+      }
 
       card.innerHTML = `
-        <img src="${photo.url}" alt="${photo.title||'Pin'}">
+        <img src="${photo.url}" alt="${photo.title || 'Pin'}">
         <div class="reaction-bar">
           <div class="reactions">
-            ${html}
-            <button class="react add-custom" title="Add emoji">➕</button>
+            ${reactionHtml}
+            <button class="react" title="Add emoji">➕</button>
           </div>
+          ${userTagsHtml}
         </div>
       `;
 
-      // Set initial reacted state
-      if (Object.values(photo.reactions).some(v => v===1)) {
+      // Set reacted state
+      const hasReaction = Object.values(photo.reactions).some(users => users.includes(currentUser.id));
+      if (hasReaction) {
         card.classList.add('reacted');
       }
 
       return card;
     }
 
+    // Load pins from Pinterest board
     async function loadPinsFromBoard(url) {
       try {
         const res = await fetch(`https://api.scrapecreators.com/v1/pinterest/board?url=${encodeURIComponent(url)}`, {
@@ -191,61 +633,110 @@
         if (!res.ok) throw new Error('API error');
         const data = await res.json();
         return (data.pins || []).map(p => ({
-          id: p.id || Date.now()+Math.random(),
-          url: p.images?.orig?.url || p.images?.['736x']?.url || '',
+          id: p.id || Date.now() + Math.random(),
+          url: p.images?.orig?.url || p.images?['736x']?.url || '',
           title: p.grid_title || p.description || 'Pin',
           source: p.link || '',
-          tag: null,
+          userTags: [],
           comments: [],
-          reactions: fixedReactions.reduce((o,e)=>{o[e]=0;return o}, {})
+          reactions: {}
         })).filter(p => p.url.startsWith('https://i.pinimg.com/'));
       } catch (e) {
         console.error('Load failed:', e);
-        alert('Could not load board – check console (F12)');
+        alert('Could not load board. Please check the URL and try again.');
         return [];
       }
     }
 
+    // Storage
     function save() {
-      localStorage.setItem('pinterestSwipePhotos', JSON.stringify(photos));
-      localStorage.setItem('pinterestSwipeIndex', currentIndex);
+      const data = {
+        photos,
+        currentIndex,
+        lastModified: Date.now(),
+        modifiedBy: currentUser.id
+      };
+      localStorage.setItem(STORAGE_PREFIX + 'data', JSON.stringify(data));
+      
+      // In production, sync to cloud storage (Firebase/Supabase)
+      console.log('Saved locally. In production, this would sync to cloud.');
     }
 
     function loadSaved() {
-      const data = localStorage.getItem('pinterestSwipePhotos');
+      const savedUser = localStorage.getItem(STORAGE_PREFIX + 'user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+      }
+
+      const data = localStorage.getItem(STORAGE_PREFIX + 'data');
       if (data) {
-        photos = JSON.parse(data);
-        currentIndex = Number(localStorage.getItem('pinterestSwipeIndex')) || 0;
+        const parsed = JSON.parse(data);
+        photos = parsed.photos || [];
+        currentIndex = parsed.currentIndex || 0;
         if (currentIndex >= photos.length) currentIndex = 0;
         render();
       }
     }
 
+    // Render functions
     function renderComments(photo) {
-      document.getElementById('comments-list').innerHTML = photo.comments?.length
-        ? photo.comments.map(c => `<p>${c}</p>`).join('')
-        : '<p style="color:#888;text-align:center;">No comments yet</p>';
+      const list = document.getElementById('comments-list');
+      if (!photo.comments || photo.comments.length === 0) {
+        list.innerHTML = '<p style="color:#a0aec0;text-align:center;padding:20px;">No comments yet</p>';
+        return;
+      }
+
+      list.innerHTML = photo.comments.map(c => {
+        const user = activeUsers.get(c.userId) || { name: c.userName || 'User', photoURL: '' };
+        return `
+          <div class="comment">
+            <div class="comment-header">
+              ${user.photoURL ? `<img src="${user.photoURL}" alt="${user.name}">` : ''}
+              <strong>${user.name}</strong>
+              <span>•</span>
+              <span>${new Date(c.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <div class="comment-text">${c.text}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderSummary(photo) {
       const div = document.getElementById('reactions-summary');
-      const active = Object.entries(photo.reactions||{}).filter(([,v])=>v===1).map(([k])=>k);
-      div.innerHTML = active.length ? active.map(e=>`<span>${e}</span>`).join('') : '<span style="color:#888;">No reactions yet</span>';
+      const reactionCounts = {};
+      
+      Object.entries(photo.reactions || {}).forEach(([emoji, userIds]) => {
+        if (userIds.length > 0) {
+          reactionCounts[emoji] = userIds.length;
+        }
+      });
+
+      if (Object.keys(reactionCounts).length === 0) {
+        div.innerHTML = '<span style="color:#cbd5e0;">No reactions yet</span>';
+        return;
+      }
+
+      div.innerHTML = Object.entries(reactionCounts)
+        .map(([emoji, count]) => `<span>${emoji} ${count}</span>`)
+        .join('');
     }
 
     function updateReacted() {
       const card = stack.querySelector('.card');
       if (!card) return;
       const photo = photos[currentIndex];
-      const hasAny = photo && Object.values(photo.reactions||{}).some(v=>v===1);
-      console.log('Updating reacted state:', hasAny ? 'ON' : 'OFF');
-      card.classList.toggle('reacted', hasAny);
+      const hasReaction = photo && Object.values(photo.reactions || {})
+        .some(users => users.includes(currentUser.id));
+      card.classList.toggle('reacted', hasReaction);
     }
 
     function render() {
+      const stack = document.getElementById('stack');
       stack.innerHTML = '';
+      
       if (currentIndex >= photos.length) {
-        stack.innerHTML = '<p class="loading">All done!<br>Load new board or undo.</p>';
+        stack.innerHTML = '<p class="loading">All done! 🎉<br>Load a new board or press Undo.</p>';
         document.getElementById('comments-list').innerHTML = '';
         document.getElementById('reactions-summary').innerHTML = '';
         return;
@@ -254,7 +745,7 @@
       for (let i = currentIndex; i < Math.min(currentIndex + 3, photos.length); i++) {
         const c = createCard(photos[i], i);
         const off = i - currentIndex;
-        c.style.transform = `translate(${off*12}px, ${off*14}px) rotate(${off*5}deg) translateZ(0) scale(0.94)`;
+        c.style.transform = `translate(${off * 12}px, ${off * 14}px) rotate(${off * 5}deg) translateZ(0) scale(${1 - off * 0.03})`;
         c.style.zIndex = photos.length - i;
         stack.appendChild(c);
       }
@@ -271,32 +762,27 @@
       }
     }
 
+    // Swipe functionality
     function addSwipeListeners() {
-      const card = stack.querySelector('.card');
+      const card = document.getElementById('stack').querySelector('.card');
       if (!card) return;
 
-      let sx=0, cx=0, st=0, dragging=false;
+      let startX = 0, currentX = 0, startTime = 0, dragging = false;
 
       const start = e => {
         dragging = true;
-        sx = e.touches?.[0]?.clientX ?? e.clientX;
-        st = Date.now();
+        startX = e.touches?.[0]?.clientX ?? e.clientX;
+        startTime = Date.now();
         card.style.transition = 'none';
         card.classList.add('dragging');
-        document.addEventListener('mousemove', moveT);
-        document.addEventListener('mouseup', end);
-        document.addEventListener('touchmove', moveT, {passive:false});
-        document.addEventListener('touchend', end);
       };
 
       const move = e => {
         if (!dragging) return;
         e.preventDefault();
-        cx = (e.touches?.[0]?.clientX ?? e.clientX) - sx;
-        card.style.transform = `translateX(${cx}px) rotate(${cx/12}deg) translateZ(0)`;
+        currentX = (e.touches?.[0]?.clientX ?? e.clientX) - startX;
+        card.style.transform = `translateX(${currentX}px) rotate(${currentX / 12}deg) translateZ(0)`;
       };
-
-      const moveT = throttle(move, 16);
 
       const end = () => {
         if (!dragging) return;
@@ -304,33 +790,44 @@
         card.classList.remove('dragging');
         card.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.45s ease';
 
-        const vel = Math.abs(cx) / (Date.now() - st || 1);
-        const thresh = window.innerWidth < 500 ? 90 : 130;
+        const velocity = Math.abs(currentX) / (Date.now() - startTime || 1);
+        const threshold = 120;
 
-        if (Math.abs(cx) > thresh || vel > 1.3) {
-          const dir = cx > 0 ? 'like' : 'dislike';
-          card.classList.add(dir);
-          photos[currentIndex].tag = dir;
+        if (Math.abs(currentX) > threshold || velocity > 1.3) {
+          const tag = currentX > 0 ? 'like' : 'dislike';
+          card.classList.add(tag);
+          
+          const photo = photos[currentIndex];
+          photo.userTags = photo.userTags || [];
+          photo.userTags = photo.userTags.filter(t => t.userId !== currentUser.id);
+          photo.userTags.push({
+            userId: currentUser.id,
+            userName: currentUser.name,
+            tag: tag,
+            timestamp: Date.now()
+          });
+
           currentIndex++;
           setTimeout(render, 460);
           save();
         } else {
-          card.style.transform = `translateX(0) rotate(0deg) translateZ(0) scale(1)`;
+          card.style.transform = 'translateX(0) rotate(0deg) translateZ(0) scale(1)';
           setTimeout(updateReacted, 60);
         }
 
-        sx = cx = 0;
-        document.removeEventListener('mousemove', moveT);
-        document.removeEventListener('mouseup', end);
-        document.removeEventListener('touchmove', moveT);
-        document.removeEventListener('touchend', end);
+        startX = currentX = 0;
       };
 
       card.addEventListener('mousedown', start);
-      card.addEventListener('touchstart', start, {passive:false});
+      card.addEventListener('touchstart', start, { passive: false });
+      document.addEventListener('mousemove', move);
+      document.addEventListener('touchmove', move, { passive: false });
+      document.addEventListener('mouseup', end);
+      document.addEventListener('touchend', end);
     }
 
-    stack.addEventListener('click', e => {
+    // Event listeners
+    document.getElementById('stack').addEventListener('click', e => {
       const btn = e.target.closest('.react');
       if (!btn) return;
       const card = btn.closest('.card');
@@ -339,18 +836,27 @@
 
       const photo = photos[idx];
 
-      if (btn.classList.contains('add-custom')) {
+      if (btn.title === 'Add emoji') {
         const em = prompt('Enter emoji:')?.trim();
         if (!em) return;
-        const was = photo.reactions[em] === 1;
-        photo.reactions[em] = was ? 0 : 1;
-        render(); // refresh for new emoji button
+        photo.reactions[em] = photo.reactions[em] || [];
+        const userIdx = photo.reactions[em].indexOf(currentUser.id);
+        if (userIdx > -1) {
+          photo.reactions[em].splice(userIdx, 1);
+        } else {
+          photo.reactions[em].push(currentUser.id);
+        }
       } else {
         const type = btn.dataset.p;
-        const was = photo.reactions[type] === 1;
-        photo.reactions[type] = was ? 0 : 1;
-        btn.classList.toggle('active', !was);
-        if (was && !fixedReactions.includes(type)) btn.remove();
+        photo.reactions[type] = photo.reactions[type] || [];
+        const userIdx = photo.reactions[type].indexOf(currentUser.id);
+        if (userIdx > -1) {
+          photo.reactions[type].splice(userIdx, 1);
+          btn.classList.remove('active');
+        } else {
+          photo.reactions[type].push(currentUser.id);
+          btn.classList.add('active');
+        }
       }
 
       renderSummary(photo);
@@ -363,7 +869,13 @@
       const inp = document.getElementById('comment-input');
       const txt = inp.value.trim();
       if (txt && photos[currentIndex]) {
-        photos[currentIndex].comments.push(txt);
+        photos[currentIndex].comments = photos[currentIndex].comments || [];
+        photos[currentIndex].comments.push({
+          userId: currentUser.id,
+          userName: currentUser.name,
+          text: txt,
+          timestamp: Date.now()
+        });
         renderComments(photos[currentIndex]);
         save();
         inp.value = '';
@@ -373,26 +885,47 @@
     document.getElementById('undo-btn').addEventListener('click', () => {
       if (currentIndex > 0) {
         currentIndex--;
-        photos[currentIndex].tag = null;
+        const photo = photos[currentIndex];
+        if (photo.userTags) {
+          photo.userTags = photo.userTags.filter(t => t.userId !== currentUser.id);
+        }
         render();
         save();
       }
     });
 
-    loadBoardBtn.addEventListener('click', async () => {
-      const url = boardUrlInput.value.trim();
-      if (!url.includes('pinterest.com')) return alert('Invalid Pinterest URL');
-      stack.innerHTML = '<p class="loading">Loading...</p>';
+    document.getElementById('load-board').addEventListener('click', async () => {
+      const url = document.getElementById('board-url').value.trim();
+      if (!url.includes('pinterest.com')) {
+        return alert('Please enter a valid Pinterest board URL');
+      }
+      
+      const stack = document.getElementById('stack');
+      stack.innerHTML = '<p class="loading">Loading pins... ⏳</p>';
+      
       const pins = await loadPinsFromBoard(url);
-      if (!pins.length) return stack.innerHTML = '<p class="loading">No images found.</p>';
+      if (!pins.length) {
+        return stack.innerHTML = '<p class="loading">No images found 😕</p>';
+      }
+      
       photos = pins;
       currentIndex = 0;
       render();
       save();
     });
 
-    loadSaved();
-    console.log('Pinder loaded – open F12 Console to see logs');
+    document.getElementById('signout-btn').addEventListener('click', signOut);
+
+    // Initialize
+    const savedUser = localStorage.getItem(STORAGE_PREFIX + 'user');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      showApp();
+    } else {
+      initGoogleAuth();
+    }
+
+    console.log('💍 Pinder Wedding Planner loaded!');
   </script>
 </body>
 </html>
